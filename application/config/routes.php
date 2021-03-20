@@ -58,3 +58,7 @@ $route['translate_uri_dashes'] = FALSE;
 // user
 // url	-> controller/method
 $route['user/login'] = 'User/login/{1}';
+
+
+// API
+$route['api/v1'] = 'Api/check';
