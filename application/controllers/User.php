@@ -25,6 +25,8 @@ class User extends API_Controller
         else
             return $token_data['token_data'];
     }
+    
+    public function login($phone)
 
 
 // ******************************************Register User with API********************************************
