@@ -59,11 +59,6 @@ class Api extends API_Controller
 // ******************************************Register User with API********************************************
 
 
-    public function check()
-    {
-        $this->api_return(['status' => 'error','code' => '102',"result" => 'ID Parameter Required',],200);exit;
-    }
-
     public function register_user()
     {
         header("Access-Control-Allow-Origin: *");
