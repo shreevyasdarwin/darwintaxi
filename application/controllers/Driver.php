@@ -101,10 +101,9 @@ class Driver extends API_Controller {
 		}
 	}
 
-	// 
+	//get driver details 
 	public function get_driver_detail($id)
 	{
-		// echo $id;exit;
 		if(!$id){
 			echo json_encode([
 				"status" => "0",
@@ -128,6 +127,112 @@ class Driver extends API_Controller {
 				"status" => "0",
 				"message" => "No data found"
 			]);exit;
+		}
+	}
+
+	// get vehicle list
+	public function get_vehicle_list()
+	{
+		$this->db->select('type,image,id as vehicle_id');
+		$this->db->from('vehicle_list');
+		$this->db->where('status', 1);
+		$query = $this->db->get()->result_array();
+		if(count($query) > 1){
+			foreach($query as $data){
+				echo json_encode([
+					"status" => "1",
+					"data" => $data
+				]);
+			}
+		}else{
+			echo json_encode([
+				"status" => '1',
+				"message" => "No data found"
+			]);exit;
+		}
+	}
+
+	// get my bookings
+	public function get_my_booking1($id,$booking_type)
+	{
+		if(!$id){
+			echo json_encode([
+				"status" => "0",
+				"message" => "Invalid parameter"
+			]);exit;
+		}
+
+		if(!$booking_type){
+			echo json_encode([
+				"status" => "0",
+				"message" => "No booking found"
+			]);exit;
+		}
+		if($booking_type=='new'){
+			$this->db->select('*, fullname as user_name, phone as user_phone');
+			$this->db->from('booking_details');
+			$this->db->join('user_register', 'booking_details.driver_id = user_register.id', 'inner');
+			$this->db->where('booking_details.ride_status', 'new');
+			$this->db->where('booking_details.driver_id', $id);
+			$this->db->where('booking_details.status', '1');
+			$query = $this->db->get()->result_array();
+			print_r($this->db->last_query());exit;
+			// var_dump($query);exit;
+		}
+	}
+
+	public function get_my_booking()
+	{
+		$id=$this->input->post('driver_id');
+		$booking_type=$this->input->post('booking_type');
+		if(!$id){
+			echo json_encode([
+				"status" => "0",
+				"message" => "Invalid parameter"
+			]);exit;
+		}
+
+		if(!$booking_type){
+			echo json_encode([
+				"status" => "0",
+				"message" => "No booking found"
+			]);exit;
+		}
+		if($booking_type=='new'){
+			$this->db->select('booking_details.*, user_register.fullname as user_name, user_register.phone as user_phone');
+			$this->db->from('booking_details');
+			$this->db->join('user_register', 'booking_details.driver_id = user_register.id', 'inner');
+			$this->db->where('booking_details.ride_status', 'new');
+			$this->db->where('booking_details.driver_id', $id);
+			$this->db->where('booking_details.status', '1');
+			$query = $this->db->get()->result_array();
+			// print_r($query);exit;
+			// echo $this->db->last_query();exit;
+			// var_dump($query);exit;
+			echo "<pre>";print_r($query);exit;
+			echo count($query);exit;
+			if(count($query) > 0){
+				foreach($query as $data){
+					echo json_encode([
+						"status" => "1",
+						"data" => $data
+					]);
+				}
+			}else{
+				echo json_encode([
+					"status" => "0",
+					"message" => "No booking found"
+				]);exit;
+			}
+		}
+		if($booking_type=='confirm'){
+			$this->db->select('*, fullname as user_name, phone as user_phone');
+			$this->db->from('booking_details');
+			$this->db->join('user_register', 'booking_details.driver_id = user_register.id', 'inner');
+			$this->db->where('booking_details.ride_status', 'confirm' || 'booking_details.ride_status', 'arrived');
+			$this->db->where('booking_details.driver_id', $id);
+			$query = $this->db->get()->result_array();
+			print_r($this->db->last_query());exit;
 		}
 	}
 }
