@@ -40,7 +40,6 @@ class User extends API_Controller
             return $token_data['token_data'];
     }
     
-    public function login($phone)
 
     public function checkID($id)
     {
