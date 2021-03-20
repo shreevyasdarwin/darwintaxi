@@ -3,7 +3,7 @@
 /**
  * API Key Header Name
  */
-$config['api_key_header_name'] = 'X-API-KEY';
+$config['api_key_header_name'] = 'TAXI-API-KEY';
 
 
 /**

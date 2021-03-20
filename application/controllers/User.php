@@ -11,42 +11,21 @@ class User extends API_Controller
         $this->load->model("api_model");
     }
 
-	/**
-	 * Index Page for this controller.
-	 *
-	 * Maps to the following URL
-	 * 		http://example.com/index.php/welcome
-	 *	- or -
-	 * 		http://example.com/index.php/welcome/index
-	 *	- or -
-	 * Since this controller is set as the default controller in
-	 * config/routes.php, it's displayed at http://example.com/
-	 *
-	 * So any other public methods not prefixed with an underscore will
-	 * map to /index.php/welcome/<method_name>
-	 * @see https://codeigniter.com/user_guide/general/urls.html
-	 */
-
-    public function auth($args=null)
+    public function auth($args=null,$method=['POST'],$auth=true)
     {
         // API Configuration [Return Array: User Token Data]
         $token_data = $this->_apiConfig([
-            'methods' => ['POST'],
-            'requireAuthorization' => true,
+            'methods' => $method,
+            'requireAuthorization' => $auth,
+            'limit' => [100, 'ip', 1],
+            'key' => ['header']
         ]);
-        if($args == 'contact')
-            return $token_data['token_data']['contact'];
+        if($args == 'phone')
+            return $token_data['token_data']['phone'];
         else
             return $token_data['token_data'];
     }
 
-    public function checkID($id)
-    {
-        if($id == null || $id == '')
-        {
-            $this->api_return(['status' => 'error','code' => '102',"result" => 'ID Parameter Required',],200);exit;
-        }
-    }
 
 // ******************************************Register User with API********************************************
 
@@ -66,14 +45,14 @@ class User extends API_Controller
         $this->load->library('Authorization_Token');
         // generte a token
         $payload = [
-          'contact' => $phone,
+          'phone' => $phone,
         ];
         $token = $this->authorization_token->generateToken($payload);
         // return data
 
         if($this->form_validation->run() == FALSE) {
             $errors = explode ("\n", validation_errors());
-            $this->api_return(['status' => 'error','message' => $errors],200);
+            $this->api_return(['status' => 'FALSE','message' => $errors],200);
         }else
         {
             $otp = rand(111111, 999999);
@@ -106,7 +85,7 @@ class User extends API_Controller
                 if($str=='success'){
                     $this->api_return(
                         [
-                            'status' => 'success',
+                            'status' => 'TRUE',
                             'message' => 'Welcome Back',
                             "result" => [
                                 'otp' =>  $otp,
@@ -115,7 +94,7 @@ class User extends API_Controller
                         ],200);
                 }
                 else{
-                    $this->api_return(['status' => 'error','message' => 'Could not send OTP, please try later'],200);exit;
+                    $this->api_return(['status' => 'FALSE','message' => 'Could not send OTP, please try later'],200);exit;
                 }
                 
             }
@@ -126,7 +105,7 @@ class User extends API_Controller
                 $this->form_validation->set_error_delimiters('','');
                 if($this->form_validation->run() == FALSE) {
                     $errors = explode ("\n", validation_errors());
-                    $this->api_return(['status' => 'error','message' => $errors],200);exit;
+                    $this->api_return(['status' => 'FALSE','message' => $errors],200);exit;
                 }
 
                 $app_version = '2.0';
@@ -176,13 +155,23 @@ class User extends API_Controller
                         $response['otp'] = $otp;
                         $response['data']=$check[0];
                         $response['referralmsg'] = 'no';
-                        $this->api_return(['status' => 'success','message' => 'Welcome',"result" => $response,],200);
+                        $this->api_return(['status' => 'TRUE','message' => 'Welcome',"result" => $response,],200);
                     }
                     else{
-                        $this->api_return(['status' => 'error','message' => 'Could not send OTP, please try later'],200);exit;
+                        $this->api_return(['status' => 'FALSE','message' => 'Could not send OTP, please try later'],200);exit;
                     }
                 }
             }
         }
     }
+
+    public function profile()
+    {
+        //Testing of fetching data from token
+        header("Access-Control-Allow-Origin: *");
+        $data = $this->auth('phone',['POST'],true);
+
+        $this->api_return(['status' => 'TRUE',"result" => $data,],200);
+    }
+
 }

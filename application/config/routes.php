@@ -61,3 +61,4 @@ $route['translate_uri_dashes'] = FALSE;
 
 // API
 $route['api/v1/user/login'] = 'User/login';
+$route['api/v1/user/profile'] = 'User/profile';
