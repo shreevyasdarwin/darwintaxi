@@ -61,3 +61,5 @@ $route['translate_uri_dashes'] = FALSE;
 
 // API
 $route['api/v1/user/login'] = 'User/login';
+
+$route['api/v1/driver/get_driver_detail'] = 'Driver/get_driver_detail/{1}';
