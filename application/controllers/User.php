@@ -24,6 +24,7 @@ class User extends CI_Controller {
 		echo 'hello';
 		// $this->load->view('welcome_message');
     }
+    
     public function login($phone)
     {
     if($phone!='' && (strlen($phone)==10)) {
