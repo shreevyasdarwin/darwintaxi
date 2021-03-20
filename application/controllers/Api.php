@@ -41,6 +41,7 @@ class Api extends API_Controller
         $token_data = $this->_apiConfig([
             'methods' => ['POST'],
             'requireAuthorization' => true,
+            'limit' => [5, 'ip', 60]
         ]);
         if($args == 'contact')
             return $token_data['token_data']['contact'];
