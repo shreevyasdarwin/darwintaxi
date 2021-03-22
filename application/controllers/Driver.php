@@ -64,7 +64,7 @@ class Driver extends API_Controller {
 			]);exit;
 		}
 		$data = $this->db->select('status')->from('user_register')->where('phone', $phone)->get()->result_array();
-		if($data[0]['status']!='1'){
+		if($data[0]['status']=='0'){
 			echo json_encode([
 				"status" => false,
 				"message" => "Account is disabled"
@@ -77,18 +77,36 @@ class Driver extends API_Controller {
 		$this->db->where('status', '1');
 		$query = $this->db->get()->result_array();
 		if(count($query) == 1){
+        // Load Authorization Library or Load in autoload config file
+        $this->load->library('Authorization_Token');
+        $this->load->library('Refresh_Token');
+        // generte a token
+        $payload = [
+          'phone' => $phone,
+        ];
+        $token          = $this->authorization_token->generateToken($payload);
+        $refresh_token  = $this->refresh_token->generateToken($payload);
+        $this->db->insert('refresh_tokens', array('contact'=>$phone,'token'=>$refresh_token));
+
+
 			$msg2 = "".$otp."%20is%20your%20code%20and%20is%20valid%20only%20for%205%20min.%20Do%20not%20share%20the%20OTP%20with%20anyone"; 
-			$response2=send_otp($phone, $msg2);
+			$response2=send_sms($phone, $msg2);
 			$str1=explode('|',$response2);
             $str= str_replace(' ','',$str1[0]);
 			if($str=='success'){
 				$this->db->set('active', 'login')->where('phone', $phone)->update('driver_register');
-				echo json_encode([
-					"token" => encrypt($query[0]['id']),
-					"OTP" => $otp,
-					"data" => $query[0],
-					"message" => "Welcome back"
-				]);
+				$this->api_return(
+					[
+						'status' => TRUE,
+						'message' => 'Welcome',
+						"result" => [
+							'otp' =>  $otp,
+							'data' => $query[0],
+							'token' => $token,
+							'refresh_token' => $refresh_token
+						],
+					],200);
+
             }else{
 				echo json_encode([
 					"status" => false,
@@ -669,6 +687,7 @@ class Driver extends API_Controller {
 	// get wallet
 	public function get_wallet()
 	{
+		$this->auth(NULL,['POST'],true);
 		$id = $this->input->post('id');
 		if(!$id){
 			echo json_encode([
@@ -689,4 +708,32 @@ class Driver extends API_Controller {
 			]);exit;
 		}
 	}
+
+    public function generateAccessToken()
+    {
+        $this->load->library('Refresh_Token');
+        $headers = $this->CI->input->request_headers();
+        $token_data = $this->refresh_token->tokenIsExist($headers);
+
+        if($token_data['status'] === TRUE){
+            $new_data = $this->_apiConfig([
+                'methods' => ['GET'],
+                'requireRefresh' => true,
+                'limit' => [100, 'ip', 1],
+                'key' => ['header']
+            ]);
+
+            $isExist = $this->db->where('token',$token_data['token'])->count_all_results('refresh_tokens');
+            if($isExist > 0){
+                $payload = ['phone' => $token_data['token_data']['phone']];
+                $this->load->library('Authorization_Token');
+                $token = $this->authorization_token->generateToken($payload);
+                $this->api_return(['status' => TRUE,'message' => 'Access token generted successfully',"result" => ['token' => $token]],200);
+            }else
+                $this->api_return(['status' => FALSE, 'message' => 'Refresh token does not exist.'],200);
+        }else{
+            $this->api_return(['status' => FALSE, 'message' => 'Token is not defined.'],200);
+        }
+    }
+
 }

@@ -194,11 +194,11 @@ class User extends API_Controller
                   $toll=0;
                 }
                 
-                $response['result'][$i]['arrival']=get_arrival_time($user_lat,$user_lon,$con,$row['id']);
+                $response['result'][$i]['arrival']=get_arrival_time($user_lat,$user_lon,false,$row['id']);
                 $response['result'][$i]['duration']=strval(get_journey_time($user_lat,$user_lon,$destination_lat,$destination_long)+get_journey_time($destination_lat,$destination_long,$destination_lat2,$destination_long2));
-                $demand= get_area_demand($user_lat,$user_lon,$con);
+                $demand= get_area_demand($user_lat,$user_lon,false);
                 $response['result'][$i]['demand']=$demand;
-                $response['result'][$i]['price']=json_decode(fare_calculator($con,$ride_distance,$row['id'],$toll,$response['result'][$i]['duration'],$demand));
+                $response['result'][$i]['price']=json_decode(fare_calculator(false,$ride_distance,$row['id'],$toll,$response['result'][$i]['duration'],$demand));
                 $i++;
               }
             }
@@ -222,11 +222,11 @@ class User extends API_Controller
               if($toll==1){
                   $toll=35;
               }
-              $response['result'][$i]['arrival']=get_arrival_time($user_lat,$user_lon,$con,$row['id']);
+              $response['result'][$i]['arrival']=get_arrival_time($user_lat,$user_lon,false,$row['id']);
               $response['result'][$i]['duration']=get_journey_time($user_lat,$user_lon,$destination_lat,$destination_long);
-              $demand= get_area_demand($user_lat,$user_lon,$con);
+              $demand= get_area_demand($user_lat,$user_lon,false);
               $response['result'][$i]['demand']=$demand;
-              $response['result'][$i]['price']=json_decode(fare_calculator($con,$ride_distance,$row['id'],$toll,$response['result'][$i]['duration'],$demand));
+              $response['result'][$i]['price']=json_decode(fare_calculator(false,$ride_distance,$row['id'],$toll,$response['result'][$i]['duration'],$demand));
               $i++;
             }
           }
