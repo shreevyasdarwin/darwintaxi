@@ -126,36 +126,6 @@ function distance($lat1, $lon1, $lat2, $lon2, $unit)
 function check_for_toll($user_lat, $user_lon, $destination_lat, $destination_long)
 {
     $curl = curl_init();
-<<<<<<< HEAD
-			$new = str_replace(' ', '%20', $msg);
-            curl_setopt_array($curl, array(
-                CURLOPT_URL => "https://enterprise.smsgupshup.com/GatewayAPI/rest?method=sendMessage&msg=".$new."&send_to=".$phone."&msg_type=Text&userid=2000190745&auth_scheme=Plain&password=jdHq2QoSg&v=1.1&format=TEXT",
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => "",
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 0,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => "GET",
-                CURLOPT_POSTFIELDS =>"",
-                CURLOPT_HTTPHEADER => array(
-                    "Content-Type: text/plain"
-                ),
-            ));
-			$response2 = curl_exec($curl);
-            curl_close($curl);
-            return $response2;
-}
-function is_user($uid){
-    $count = mysqli_fetch_array(mysqli_query($GLOBALS['con'],"select count(1) as count from user_register WHERE id='$uid' AND status= 1"),MYSQLI_ASSOC);
-    if($count['count'] == 1 || $count['count'] == '1')
-        return 1;
-    else
-        return 0;
- } 
-
- 
-=======
     curl_setopt_array($curl, array(
         CURLOPT_URL => "https://maps.googleapis.com/maps/api/directions/json?origin=$user_lat,$user_lon&destination=$destination_lat,$destination_long&mode=driving&key=AIzaSyAmZkCXszu47oMu-pPgxt3ZFBVDYgC2PEk",
         CURLOPT_RETURNTRANSFER => true,
@@ -393,4 +363,3 @@ function general_value($column){
         return 0;
 }
 
->>>>>>> 982a8119ca3b0fe7d615d8793e618e064747c969
