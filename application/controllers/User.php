@@ -261,7 +261,7 @@ class User extends API_Controller
                 $token = $this->authorization_token->generateToken($payload);
                 $this->api_return(['status' => TRUE,'message' => 'Access token generted successfully',"result" => ['token' => $token]],200);
             }else
-                $this->api_return(['status' => FALSE, 'message' => 'Refresh oken does not exist.'],200);
+                $this->api_return(['status' => FALSE, 'message' => 'Refresh token does not exist.'],200);
         }else{
             $this->api_return(['status' => FALSE, 'message' => 'Token is not defined.'],200);
         }
