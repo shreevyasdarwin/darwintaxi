@@ -26,7 +26,6 @@ class User extends API_Controller
             return $token_data['token_data'];
     }
 
-
 // ******************************************Register User with API********************************************
 
     public function login()
@@ -59,30 +58,8 @@ class User extends API_Controller
             $check = $this->db->where('phone',$phone)->get('user_register')->result_array();
             if($check){
                 // if user already exist
-                $curl = curl_init();
-                $msg2 = "".$otp."%20is%20your%20code%20and%20is%20valid%20only%20for%205%20min.%20Do%20not%20share%20the%20OTP%20with%20anyone";
-                $new = str_replace(' ', '%20', $msg2);
-                curl_setopt_array($curl, array(
-                    CURLOPT_URL => "https://enterprise.smsgupshup.com/GatewayAPI/rest?method=sendMessage&msg=".$new."&send_to=".$phone."&msg_type=Text&userid=2000190745&auth_scheme=Plain&password=jdHq2QoSg&v=1.1&format=TEXT",
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_ENCODING => "",
-                    CURLOPT_MAXREDIRS => 10,
-                    CURLOPT_TIMEOUT => 0,
-                    CURLOPT_FOLLOWLOCATION => true,
-                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                    CURLOPT_CUSTOMREQUEST => "GET",
-                    CURLOPT_POSTFIELDS =>"",
-                    CURLOPT_HTTPHEADER => array(
-                        "Content-Type: text/plain"
-                    ),
-                ));
-
-                $response2 = curl_exec($curl);
-
-                curl_close($curl);
-                $str1=explode('|',$response2);
-                $str= str_replace(' ','',$str1[0]);
-                if($str=='success'){
+                $msg = "".$otp."%20is%20your%20code%20and%20is%20valid%20only%20for%205%20min.%20Do%20not%20share%20the%20OTP%20with%20anyone";
+                if(send_sms($phone, $msg)){
                     $this->api_return(
                         [
                             'status' => 'TRUE',
@@ -111,6 +88,7 @@ class User extends API_Controller
                 $app_version = '2.0';
                 $device_name = $this->input->post('device_name');
                 $device_type = $this->input->post('device_type');
+                $device_model = $this->input->post('device_type');
                 $sub_exp_date = date('Y-m-d', strtotime('+3 months'));
                 $data = array(
                     'phone' => $phone,
@@ -124,32 +102,8 @@ class User extends API_Controller
                 );
                 if($this->db->insert('user_register', $data)){
                     $id = $this->db->insert_id();
-
-                    $curl = curl_init();
-                    $msg2 = "".$otp."%20is%20your%20code%20and%20is%20valid%20only%20for%205%20min.%20Do%20not%20share%20the%20OTP%20with%20anyone";
-                    $new = str_replace(' ', '%20', $msg2);
-                    curl_setopt_array($curl, array(
-                        CURLOPT_URL => "https://enterprise.smsgupshup.com/GatewayAPI/rest?method=sendMessage&msg=".$new."&send_to=".$phone."&msg_type=Text&userid=2000190745&auth_scheme=Plain&password=jdHq2QoSg&v=1.1&format=TEXT",
-                        CURLOPT_RETURNTRANSFER => true,
-                        CURLOPT_ENCODING => "",
-                        CURLOPT_MAXREDIRS => 10,
-                        CURLOPT_TIMEOUT => 0,
-                        CURLOPT_FOLLOWLOCATION => true,
-                        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                        CURLOPT_CUSTOMREQUEST => "GET",
-                        CURLOPT_POSTFIELDS =>"",
-                        CURLOPT_HTTPHEADER => array(
-                            "Content-Type: text/plain"
-                        ),
-                    ));
-                    
-                    $response2 = curl_exec($curl);
-
-                    curl_close($curl);
-                    
-                    $str1=explode('|',$response2);
-                    $str= str_replace(' ','',$str1[0]);
-                    if($str=='success'){
+                    $msg = "".$otp."%20is%20your%20code%20and%20is%20valid%20only%20for%205%20min.%20Do%20not%20share%20the%20OTP%20with%20anyone";
+                    if(send_sms($phone, $msg)){
                         $check = $this->db->get_where('user_register', array('id' => $id))->result_array();
                         $response['token'] = $token;
                         $response['otp'] = $otp;
