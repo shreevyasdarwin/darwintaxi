@@ -152,7 +152,7 @@ class Refresh_Token
      * Token Header Check
      * @param: request headers
      */
-    private function tokenIsExist($headers)
+    public function tokenIsExist($headers)
     {
         if(!empty($headers) AND is_array($headers)) {
             foreach ($headers as $header_name => $header_value) {

@@ -49,8 +49,8 @@ class User extends API_Controller
         ];
         $token          = $this->authorization_token->generateToken($payload);
         $refresh_token  = $this->refresh_token->generateToken($payload);
+        $this->db->insert('refresh_tokens', array('contact'=>$phone,'token'=>$refresh_token));
         // return data
-
         if($this->form_validation->run() == FALSE) {
             $errors = explode ("\n", validation_errors());
             $this->api_return(['status' => FALSE,'message' => $errors],200);
@@ -242,22 +242,28 @@ class User extends API_Controller
 
     public function generateAccessToken()
     {
-        // API Configuration [Return Array: User Token Data]
-        $token_data = $this->_apiConfig([
-            'methods' => ['GET'],
-            'requireRefresh' => true,
-            'limit' => [100, 'ip', 1],
-            'key' => ['header']
-        ]);
+        $this->load->library('Refresh_Token');
+        $headers = $this->CI->input->request_headers();
+        $token_data = $this->refresh_token->tokenIsExist($headers);
 
-        // $payload = [
-        //   'phone' => $token_data,
-        // ];
+        if($token_data['status'] === TRUE){
+            $new_data = $this->_apiConfig([
+                'methods' => ['GET'],
+                'requireRefresh' => true,
+                'limit' => [100, 'ip', 1],
+                'key' => ['header']
+            ]);
 
-        print_r($token_data);exit;
-        // $this->load->library('Authorization_Token');
-        // return = $this->authorization_token->generateToken($payload);
+            $isExist = $this->db->where('token',$token_data['token'])->count_all_results('refresh_tokens');
+            if($isExist > 0){
+                $payload = ['phone' => $token_data['token_data']['phone']];
+                $this->load->library('Authorization_Token');
+                $token = $this->authorization_token->generateToken($payload);
+                $this->api_return(['status' => TRUE,'message' => 'Access token generted successfully',"result" => ['token' => $token]],200);
+            }else
+                $this->api_return(['status' => FALSE, 'message' => 'Refresh oken does not exist.'],200);
+        }else{
+            $this->api_return(['status' => FALSE, 'message' => 'Token is not defined.'],200);
+        }
     }
-
-
 }
