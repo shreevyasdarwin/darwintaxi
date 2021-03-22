@@ -25,6 +25,13 @@ function send_otp($phone, $msg){
 			$response2 = curl_exec($curl);
             curl_close($curl);
             return $response2;
-} 
+}
+function is_user($uid){
+    $count = mysqli_fetch_array(mysqli_query($GLOBALS['con'],"select count(1) as count from user_register WHERE id='$uid' AND status= 1"),MYSQLI_ASSOC);
+    if($count['count'] == 1 || $count['count'] == '1')
+        return 1;
+    else
+        return 0;
+ } 
 
  

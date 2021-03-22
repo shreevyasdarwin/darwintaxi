@@ -26,10 +26,7 @@ class User extends API_Controller
             return $token_data['token_data'];
     }
     
-
-
 // ******************************************Register User with API********************************************
-
     public function login()
     {
         header("Access-Control-Allow-Origin: *");
@@ -96,7 +93,7 @@ class User extends API_Controller
                 $device_name = $this->input->post('device_name');
                 $device_type = $this->input->post('device_type');
                 $device_model = $this->input->post('device_type');
-                $sub_exp_date = date('Y-m-d', strtotime('+3 months'));
+                // $sub_exp_date = date('Y-m-d', strtotime('+3 months'));
                 $data = array(
                     'phone' => $phone,
                     'device_type'  => $device_type,
@@ -109,7 +106,6 @@ class User extends API_Controller
                 );
                 if($this->db->insert('user_register', $data)){
                     $id = $this->db->insert_id();
-                    
                     $curl = curl_init();
                     $msg2 = "".$otp."%20is%20your%20code%20and%20is%20valid%20only%20for%205%20min.%20Do%20not%20share%20the%20OTP%20with%20anyone";
                     $response2=send_otp($phone, $msg2);
@@ -131,14 +127,173 @@ class User extends API_Controller
             }
         }
     }
-
+        
     public function profile()
     {
         //Testing of fetching data from token
         header("Access-Control-Allow-Origin: *");
         $data = $this->auth('phone',['POST'],true);
-
         $this->api_return(['status' => 'TRUE',"result" => $data,],200);
     }
 
+    public function wallet(){
+        $id=$this->input->post('user_id');
+        $this->auth(null,['POST'],TRUE);
+        if(is_user($id)==0){
+            $response['status'] = 0;
+            $response['message'] = "User Not Found";
+            echo json_encode($response);exit;
+        }
+        $amount=$_GET['amount'];
+        $payment_id=$_GET['payment_id'];
+        if($id!='' || $amount!=''){
+            $sql=$this->db->set("wallet","wallet"+$amount)->where('id',$id)->update('user_register');
+            if($sql){
+                $data = array(
+                    'user_id' => $id,
+                    'amount' => $amount,
+                    'transaction_id' => $payment_id,
+                    'remark' => 'amount added in wallet',
+                    'type' => 0,
+                    'status' => 1,
+                    'date' => date('Y-m-d')
+                );
+            
+                $this->db->insert('user_transaction', $data);
+                $response['status'] = 1; // if successful
+                $response['message'] = "Amount added successfully";
+            }
+            else{
+                $response['status'] = 0; // if failed
+                $response['message'] = "Operation failed";
+            }
+        }
+        else{
+            $response['status'] = 0;
+            $response['message'] = "Wrong parameter passed";
+        }        
+        if(empty($response)){
+            $response['status']=0;
+        }
+        echo json_encode($response);
+    }
+    public function book_ride(){
+    // latitude and longitude distance calculator
+    require("../function/fare_calculator.php");
+    $vehicle_class= new vehicle_list();
+        $user_id = decrypt($_GET['token']);
+        if(!is_user($user_id)){
+            $response['status'] = 0;
+            $response['message'] = "User Not Found";
+            echo json_encode($response);exit;
+        }
+        // latitude and longitude
+        $lat1 = $_GET['depart_lat']; // depature
+        $lng1 = $_GET['depart_long']; // depature
+        $lat2 = $_GET['dest_lat']; //destination
+        $lng2 = $_GET['dest_long']; //destination
+        $destination_lat2=$_GET['dest_lat2']; // 2nd stop
+        $destination_long2=$_GET['dest_long2']; // 2nd top
+        $ride_time=$_GET['ride_time'];
+        $duration = $_GET['duration'];
+        $demand = $_GET['demand'];
+        $vehicle_type = $_GET['vehicle_type'];
+        $distance = intval($_GET['distance']);
+        $amount=$_GET['amount'];
+        $tax=$_GET['tax']; //tax
+        $surcharges=$_GET['surcharges'];
+        $toll=$_GET['toll']; // toll
+        $base_fare=$_GET['base_fare']; // base fare
+        $commission = $_GET['comm']; // commission
+        $discount = $_GET['discount'];
+        $coupon = $_GET['coupon'] != '' ? $_GET['coupon'] : NULL;
+
+        $depart_name = $_GET['depart_name'];
+        $destination_name = $_GET['destination_name'];
+        $destination_name2 = $_GET['destination_name2'];
+        $payment_method=$_GET['payment_method']; // cash , wallet ,  online
+        $date = date('Y-m-d H:i:s');
+        $image = mysqli_fetch_array(mysqli_query($con,"SELECT photo_path from user_register where id='$user_id'"),MYSQLI_ASSOC);
+        $image = $image['photo_path'];
+        if($payment_method=='wallet'){
+            // check wallet balance
+            $u_wallet=mysqli_fetch_array(mysqli_query($con,"SELECT wallet from user_register where id='$user_id'"),MYSQLI_ASSOC);
+            if($u_wallet['wallet']<$amount){
+            $response['status'] = 0;
+            $response['message'] = "You don't have enough balance in wallet";
+            echo json_encode($response);
+            exit;
+            }
+        }
+        // number of stops
+        if($destination_name2!='')
+        $stop=2;
+        else
+        $stop=1;
+
+        $count = mysqli_num_rows(mysqli_query($con,"SELECT id FROM `booking_details` where user_id='$user_id' AND ( ride_status='new' OR ride_status='onride' OR ride_status='confirm' OR ride_status='arrived' )"));
+
+        if($count==0){
+
+        // latitude and longitude of Two Points
+            $count=0;
+            $result = mysqli_query($con,"SELECT r.id,r.latitude,r.longitude,r.go_home,r.go_home_lat,r.go_home_long FROM driver_register r INNER JOIN driver_vehicle d on r.id=d.driver_id WHERE r.status='1' AND r.online!='no' and (r.latitude !='null' and r.latitude !='') and ( r.longitude !='null' and r.longitude !='' ) and d.vehicle_id='$vehicle_type' ");
+            $bookid = strtoupper(uniqid().$user_id);
+            $otp = rand(1111,9999);
+            $icount = 0;
+            $range1= general_value('go_home_km');
+            $range=general_value('km_range'); // km range of driver to get the booking
+            while($row=mysqli_fetch_array($result)){
+                $id=$row['id'];
+                $distance1=$vehicle_class->distance($lat1,$lng1,$row['latitude'],$row['longitude'],"K");
+
+                if(intval($distance1) <= $range)
+                {
+                    if($row['go_home'] == 1) //check driver go home query
+                    {
+                        $home_dis=$vehicle_class->distance($destination_lat2,$destination_long2,$row['go_home_lat'],$row['go_home_long'],"K");
+                        if(intval($home_dis) <= $range1)
+                        {
+                            $insertdata = mysqli_query($con, "INSERT INTO booking_details(bookid,otp,user_id,stop,depart_name,destination_name,destination_name2,depart_lat,depart_long,dest_lat,dest_long,distance,duration,vehicle_type,demand,amount,base_fare,toll,tax,commission,surcharge,ride_status,payment_status,driver_id,payment_method,created_date,image,discount,coupon)
+                            VALUES('$bookid','$otp','$user_id','$stop','$depart_name','$destination_name','$destination_name2','$lat1','$lng1','$lat2','$lng2',
+                            '$distance','$duration','$vehicle_type','$demand','$amount','$base_fare','$toll','$tax','$commission','$surcharges','new',0,'$id','$payment_method','$date','$image','$discount','$coupon')");
+                            if(mysqli_affected_rows($con) > 0){
+                                $icount++;
+                            }
+                        }
+                    }
+                    else{
+
+                        $insertdata = mysqli_query($con, "INSERT INTO booking_details(bookid,otp,user_id,stop,depart_name,destination_name,destination_name2,depart_lat,depart_long,dest_lat,dest_long,dest_lat2,dest_long2,distance,duration,vehicle_type,demand,amount,base_fare,toll,tax,commission,surcharge,ride_status,payment_status,driver_id,payment_method,created_date,image,discount,coupon)
+                        VALUES('$bookid','$otp','$user_id','$stop','$depart_name','$destination_name','$destination_name2','$lat1','$lng1','$lat2','$lng2','$destination_lat2','$destination_long2',
+                        '$distance','$duration','$vehicle_type','$demand','$amount','$base_fare','$toll','$tax','$commission','$surcharges','new',0,'$id','$payment_method','$date','$image','$discount','$coupon')");
+                            if(mysqli_affected_rows($con) > 0){
+                                $icount++;
+                            }
+                    }
+                }
+            }
+            if($icount>0)
+            {
+                $response['status'] = 1;
+                $response['message'] = "Booking success";
+                $response['booking_id'] = $bookid;
+            }
+            else
+            {
+                $response['status'] = 0;
+                $response['message'] = "No drivers found in your nearby location";
+            }
+        }
+        else{
+            $response['status'] = 0;
+            $response['message'] = "You are already on ride";
+        }
+        if(empty($response)){
+            $response['status']=0;
+            $response['message'] = "Operation failed";
+        }
+        echo json_encode($response);
+        mysqli_close($con);
+    }
 }

@@ -117,7 +117,6 @@ class Driver extends API_Controller {
 		$this->db->join('vehicle_list', 'vehicle_list.id = driver_vehicle.vehicle_id', 'inner');
 		$this->db->where('driver_register.id', $id);
 		$query = $this->db->get()->result_array();
-		// print_r($this->db->last_query());exit;
 		if(count($query) == 1){
 			echo json_encode([
 				"status" => "1",
