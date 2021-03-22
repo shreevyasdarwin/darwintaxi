@@ -25,8 +25,6 @@ class User extends API_Controller
         else
             return $token_data['token_data'];
     }
-    
-    public function login($phone)
 
 
 // ******************************************Register User with API********************************************
@@ -157,7 +155,7 @@ class User extends API_Controller
                         $response['otp'] = $otp;
                         $response['data']=$check[0];
                         $response['referralmsg'] = 'no';
-                        $this->api_return(['status' => 'TRUE','message' => 'Welcome',"result" => $response,],200);
+                        $this->api_return(['status' => 'TRUE','message' => 'Welcome',"result" => $response],200);
                     }
                     else{
                         $this->api_return(['status' => 'FALSE','message' => 'Could not send OTP, please try later'],200);exit;
@@ -167,13 +165,33 @@ class User extends API_Controller
         }
     }
 
-    public function profile()
+    public function update_profile()
     {
-        //Testing of fetching data from token
         header("Access-Control-Allow-Origin: *");
-        $data = $this->auth('phone',['POST'],true);
+        $phone = $this->auth('phone',['POST'],true);
 
-        $this->api_return(['status' => 'TRUE',"result" => $data,],200);
+        $this->form_validation->set_rules('fullname', 'Full Name', 'trim|required');
+        $this->form_validation->set_rules('email', 'Email', 'trim|required');
+        $this->form_validation->set_rules('sos', 'SOS', 'trim|required');
+        $this->form_validation->set_rules('photo_path', 'Photo Link', 'trim|required');
+        $this->form_validation->set_error_delimiters('','');
+
+        if($this->form_validation->run() == FALSE) {
+            $errors = explode ("\n", validation_errors());
+            $this->api_return(['status' => 'FALSE','message' => $errors],200);exit;
+        }
+        $data['fullname']   = $this->input->post('fullname');
+        $data['email']      = $this->input->post('email');
+        $data['sos']        = $this->input->post('sos');
+        $data['photo_path'] = $this->input->post('photo_path');
+
+        $this->db->where('phone', $phone);
+        if($this->db->update('user_register', $data))
+        {
+            $this->api_return(['status' => 'TRUE','message' => 'Profile updated successfully'],200);
+        }else{
+            $this->api_return(['status' => 'TRUE','message' => 'Failed to update'],200);
+        }
     }
 
 }
