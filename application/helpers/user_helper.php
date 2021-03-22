@@ -329,7 +329,7 @@ function get_journey_time($user_lat, $user_lon, $destination_lat, $destination_l
     }
     else return $return;
 
-}
+}   
 
 function get_area_demand($lat1, $lng1, $con)
 {
