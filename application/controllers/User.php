@@ -42,11 +42,13 @@ class User extends API_Controller
         
         // Load Authorization Library or Load in autoload config file
         $this->load->library('Authorization_Token');
+        $this->load->library('Refresh_Token');
         // generte a token
         $payload = [
           'phone' => $phone,
         ];
-        $token = $this->authorization_token->generateToken($payload);
+        $token          = $this->authorization_token->generateToken($payload);
+        $refresh_token  = $this->refresh_token->generateToken($payload);
         // return data
 
         if($this->form_validation->run() == FALSE) {
@@ -66,14 +68,14 @@ class User extends API_Controller
                             'message' => 'Welcome Back',
                             "result" => [
                                 'otp' =>  $otp,
-                                'token' => $token
+                                'token' => $token,
+                                'refresh_token' => $refresh_token
                             ],
                         ],200);
                 }
                 else{
                     $this->api_return(['status' => FALSE,'message' => 'Could not send OTP, please try later'],200);exit;
                 }
-                
             }
             else{
                 // if new user
@@ -106,6 +108,7 @@ class User extends API_Controller
                     if(send_sms($phone, $msg)){
                         $check = $this->db->get_where('user_register', array('id' => $id))->result_array();
                         $response['token'] = $token;
+                        $response['refresh_token'] = $refresh_token;
                         $response['otp'] = $otp;
                         $response['data']=$check[0];
                         $response['referralmsg'] = 'no';
@@ -235,5 +238,26 @@ class User extends API_Controller
         }
         $this->api_return($response,200);
     }
+
+
+    public function generateAccessToken()
+    {
+        // API Configuration [Return Array: User Token Data]
+        $token_data = $this->_apiConfig([
+            'methods' => ['GET'],
+            'requireRefresh' => true,
+            'limit' => [100, 'ip', 1],
+            'key' => ['header']
+        ]);
+
+        // $payload = [
+        //   'phone' => $token_data,
+        // ];
+
+        print_r($token_data);exit;
+        // $this->load->library('Authorization_Token');
+        // return = $this->authorization_token->generateToken($payload);
+    }
+
 
 }
