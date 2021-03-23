@@ -34,6 +34,8 @@ class User extends API_Controller
         // API Configuration
         $this->_apiConfig([
             'methods' => ['POST'],
+            'limit' => [100, 'ip', 1],
+            'key' => ['header']
         ]);
         $phone = $this->input->post('phone');
 
@@ -252,7 +254,7 @@ class User extends API_Controller
                 'requireRefresh' => true,
                 'limit' => [100, 'ip', 1],
                 'key' => ['header']
-            ]);
+            ]); 
 
             $isExist = $this->db->where('token',$token_data['token'])->count_all_results('refresh_tokens');
             if($isExist > 0){
@@ -266,4 +268,50 @@ class User extends API_Controller
             $this->api_return(['status' => FALSE, 'message' => 'Token is not defined.'],200);
         }
     }
+
+    public function pay_for_ride_gateway()
+    {
+        header("Access-Control-Allow-Origin: *");
+        $phone = $this->auth('phone',['POST'],true);
+
+        $this->form_validation->set_rules('booking_id', 'Booking Id', 'required');
+        $this->form_validation->set_rules('payment_id', 'Payment Id', 'required');
+
+        if($this->form_validation->run() == FALSE) {
+            $errors = explode ("\n", validation_errors());
+            $this->api_return(['status' => FALSE,'message' => $errors],200);exit;
+        }
+        $bookid     = $this->input->post('booking_id');
+        $payment_id = $this->input->post('payment_id');
+        $row = $this->db->query("select driver_phone,amount,base_fare,commission,payment_status from booking_details where user_phone='$phone' AND ride_status='completed' AND bookid='$bookid'")->result_array();
+        $row = $row[0];
+        if($row){
+            if($row['payment_status']==1){
+                $this->api_return(['status' => FALSE, 'message' => 'Payment already done.'],200);
+            }
+            else{
+                // update booking details table with payment details and update driver wallet
+                // update booking_details table
+                  $this->db->query("UPDATE booking_details set transaction_id='$payment_id',payment_status=1 where bookid='$bookid' AND user_phone='$phone' ");
+
+                  if($this->db->affected_rows()>0){
+                    // user transaction entry
+                        $amount=$row['amount'];
+                        $this->db->query("INSERT INTO user_transaction (user_phone,amount,transaction_id,remark,status,`date`) values ('$phone','$amount','$payment_id','ride payment by gateway',1,date('Y-m-d H:i:s'))");
+                      // update driver wallet
+                        $driver_phone  =   $row['driver_phone'];
+                        $comm       =   $row['commission'];
+                        $base_fare  =   $row['base_fare'];
+                        $income     =   $base_fare-$comm;
+                        $this->db->query("UPDATE driver_register set wallet = wallet+$income where phone='$driver_phone'");
+                        $this->db->query("INSERT into driver_transaction (driver_phone,amount,transaction_id,remark,status,date) values ('$driver_phone','$income','$payment_id','ride payment by gateway',1,date('Y-m-d H:i:s'))");
+                        $this->api_return(['status' => TRUE, 'message' => 'Payment successful.'],200);
+                  }   
+            }
+        }
+        else{
+          $this->api_return(['status' => FALSE, 'message' => 'Ride not completed yet!.'],200);
+        }
+    }
+
 }

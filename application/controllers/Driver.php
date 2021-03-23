@@ -72,9 +72,10 @@ class Driver extends API_Controller {
 	public function login()
 	{
 		header("Access-Control-Allow-Origin: *");
-        // API Configuration
         $this->_apiConfig([
             'methods' => ['POST'],
+            'limit' => [100, 'ip', 1],
+            'key' => ['header']
         ]);
 		$phone = $this->input->post('phone');
 		if(!$phone){
