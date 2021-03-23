@@ -535,51 +535,77 @@ class User extends API_Controller
     echo json_encode($response);
     }
     public function pay_for_ride_cash(){
-    $phone=$this->input->post('phone');
-    $this->auth(null,['POST'],TRUE);
-    if(!is_user($phone)){
-        $response['status'] = 0;
-        $response['message'] = "User Not Found";
-        echo json_encode($response);exit;
-    }
-    $bookid=$this->input->post('booking_id');
-    if($phone!='' && $bookid!=''){
-    $sql1=$this->db->query("select driver_id,amount,base_fare,commission,payment_status from booking_details where user_id='$phone' AND ride_status='completed' AND bookid='$bookid'");
-    $row1=$sql1[0];
-        if(count($row1)>=1){
-            $payment_id=strtoupper($bookid.'-CASH');
-            if($row1['payment_status']==1){
-                $response['status']=0;
-                $response['message']='Payment already done';
-            }
-            else{
-                $this->db->query("UPDATE booking_details set transaction_id='$payment_id',payment_status=1 where bookid='$bookid' AND user_id='$phone' ");
-                if($this->db->affected_rows()>0){
-                // user transaction entry                       
-                        $amount=$row1['amount'];
-                        $this->db->query("INSERT INTO user_transaction (phone,amount,transaction_id,remark,status,date) values ('$phone','$amount','$payment_id','ride payment by cash',1,CURDATE())");
-                        // update driver wallet
-                        $driver_id=$row1['driver_id'];
-                        $comm=$row1['commission'];
-                        $base_fare=$row1['base_fare'];
-                        $wallet_deduction=$base_fare-$comm;
-                        $this->db->query("UPDATE driver_register set wallet = wallet-$wallet_deduction where id='$driver_id' ");                    
-                        $this->db->query("INSERT into driver_transaction (driver_id,amount,transaction_id,remark,status,date) values ('$driver_id','$amount','$payment_id','ride payment by cash',1,CURDATE())");            
-                        $response['status']=1;
-                        $response['message']='Payment successful';
+
+        $phone=$this->input->post('phone');
+        $this->auth(null,['POST'],TRUE);
+        if(!is_user($phone)){
+            $response['status'] = 0;
+            $response['message'] = "User Not Found";
+            echo json_encode($response);exit;
+        }
+        $bookid=$this->input->post('booking_id');
+        if($phone!='' && $bookid!=''){
+        $sql1=$this->db->query("select driver_id,amount,base_fare,commission,payment_status from booking_details where user_id='$phone' AND ride_status='completed' AND bookid='$bookid'");
+        $row1=$sql1[0];
+            if(count($row1)>=1){
+                $payment_id=strtoupper($bookid.'-CASH');
+                if($row1['payment_status']==1){
+                    $response['status']=0;
+                    $response['message']='Payment already done';
+                }
+                else{
+                    $this->db->query("UPDATE booking_details set transaction_id='$payment_id',payment_status=1 where bookid='$bookid' AND user_id='$phone' ");
+                    if($this->db->affected_rows()>0){
+                    // user transaction entry                       
+                            $amount=$row1['amount'];
+                            $this->db->query("INSERT INTO user_transaction (phone,amount,transaction_id,remark,status,date) values ('$phone','$amount','$payment_id','ride payment by cash',1,CURDATE())");
+                            // update driver wallet
+                            $driver_id=$row1['driver_id'];
+                            $comm=$row1['commission'];
+                            $base_fare=$row1['base_fare'];
+                            $wallet_deduction=$base_fare-$comm;
+                            $this->db->query("UPDATE driver_register set wallet = wallet-$wallet_deduction where id='$driver_id' ");                    
+                            $this->db->query("INSERT into driver_transaction (driver_id,amount,transaction_id,remark,status,date) values ('$driver_id','$amount','$payment_id','ride payment by cash',1,CURDATE())");            
+                            $response['status']=1;
+                            $response['message']='Payment successful';
+                    }
                 }
             }
+            else{
+            $response['status']=0;
+            $response['message']="Ride not completed yet!";
+            }
         }
-        else{
-        $response['status']=0;
-        $response['message']="Ride not completed yet!";
+        if(empty($response)){
+            $response['status']=0;
+            $response['message'] = "Operation failed";
         }
+        echo json_encode($response);
     }
-    if(empty($response)){
-        $response['status']=0;
-        $response['message'] = "Operation failed";
-    }
-    echo json_encode($response);
+    public function set_favourite_ride(){
+        $phone=$this->input->post('phone');
+        $this->auth(null,['POST'],TRUE);
+
+        if(!is_user($phone)){
+            $response['status'] = 0;
+            $response['message'] = "User Not Found";
+            echo json_encode($response);exit;
+        }
+        $place_name = $_GET['place_name'];
+        $latitude = $_GET['latitude'];
+        $longitude = $_GET['longitude'];
+        
+        $this->db->query("INSERT INTO favourite_ride(phone,place_name,latitude,longitude) VALUES('$phone', '$place_name', '$latitude', '$longitude')");
+        if($this->db->affected_rows() > 0){
+            $response['status'] = 1;
+            $response['message'] = "Successfully added to favourite list";
+        }else{
+            // echo mysqli_error($con);exit;
+            $response['status'] = 0;
+            $response['message'] = "Somthing went wrong, try again!";
+        }
+        echo json_encode($response);
+        mysqli_close($con);
     }
 
 }
