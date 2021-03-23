@@ -174,7 +174,6 @@ class Driver extends API_Controller {
 	// get vehicle list
 	public function get_vehicle_list()
 	{
-		$this->auth(NULL,['POST'],TRUE);
 		$this->db->select('type,image,id as vehicle_id');
 		$this->db->from('vehicle_list');
 		$this->db->where('status', 1);
@@ -469,7 +468,6 @@ class Driver extends API_Controller {
 	// service list
 	public function service_list()
 	{
-		$this->auth(NULL,['POST'],TRUE);
 		$data = $this->db->select('*')->from('service_city')->order_by('id', 'desc')->get()->result_array();
 		if(count($data) > 0){
 			foreach ($data as $row) {
@@ -623,7 +621,6 @@ class Driver extends API_Controller {
 	// rental price
 	public function rental_price()
 	{
-		$this->auth(NULL,['POST'],TRUE);
 		$sql = $this->db->select('*')->from('rental_price')->get()->result_array();
 		$i = 0;
 		foreach($sql as $row){
