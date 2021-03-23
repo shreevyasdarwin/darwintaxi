@@ -70,15 +70,15 @@ $route['api/v1/user/pay_for_ride_gateway'] 	= 'User/pay_for_ride_gateway';
 
 $route['api/v1/user/payForRideFromWallet'] 	= 'User/payForRideFromWallet';
 
-$route['api/v1/user/purchase_sub'] 	= 'User/purchase_sub';
+$route['api/v1/user/purchase_sub'] 	        = 'User/purchase_sub';
 
-$route['api/v1/user/get_cancel_rides'] 	= 'User/get_cancel_rides';
+$route['api/v1/user/get_cancel_rides'] 	    = 'User/get_cancel_rides';
 
-$route['api/v1/user/get_profile'] 	= 'User/get_profile';
+$route['api/v1/user/get_profile'] 	        = 'User/get_profile';
 
-$route['api/v1/user/user_transaction'] 	= 'User/user_transaction';
+$route['api/v1/user/user_transaction'] 	    = 'User/user_transaction';
 
-$route['api/v1/user/fetch_fav_ride'] 	= 'User/fetch_fav_ride';
+$route['api/v1/user/fetch_fav_ride'] 	    = 'User/fetch_fav_ride';
 
 
 // ***************************************Driver*****************************************************
