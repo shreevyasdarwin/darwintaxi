@@ -122,6 +122,17 @@ class API_Controller extends CI_Controller
             // return token decode data
             return [ 'token_data' => (array) $token_data ];
         }
+
+
+        // IF Require Refresh Authentication
+        if(isset($config['requireRefresh']) AND $config['requireRefresh'] === true) {
+            $token_data = $this->_isAuthorizedRefresh();
+            // remove api time in user token data
+            unset($token_data->API_TIME);
+            // return token decode data
+            return [ 'token_data' => (array) $token_data ];
+        }
+
     }
 
 
@@ -478,6 +489,28 @@ class API_Controller extends CI_Controller
 
         // check token is valid
         $result = $this->authorization_token->validateToken();
+
+        if (isset($result['status']) AND $result['status'] === true)
+        {
+            return $result['data'];
+
+        } else {
+
+            $this->_response(['status' => FALSE, 'error' => $result['message']], $this->HTTP_UNAUTHORIZED);
+        }
+    }
+
+
+    /**
+     * Is Refresh Authorized
+     */
+    private function _isAuthorizedRefresh()
+    {
+        // Load Authorization Library
+        $this->CI->load->library('Refresh_Token');
+
+        // check token is valid
+        $result = $this->refresh_token->validateToken();
 
         if (isset($result['status']) AND $result['status'] === true)
         {

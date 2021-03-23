@@ -253,6 +253,7 @@ function fare_calculator($con, $distance, $p_vehicle_id, $p_toll, $minutes, $dem
 
     return json_encode($response);
 }
+
 function get_arrival_time($user_lat, $user_lon, $con, $vehicle_id)
 {
     $CI =& get_instance();

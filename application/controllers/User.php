@@ -248,20 +248,20 @@ class User extends API_Controller
     }
 
     public function wallet(){
-        $id=$this->input->post('user_id');
+        $phone=$this->input->post('phone');
         $this->auth(null,['POST'],TRUE);
-        if(is_user($id)==0){
+        if(is_user($phone)==0){
             $response['status'] = 0;
             $response['message'] = "User Not Found";
             echo json_encode($response);exit;
         }
         $amount=$_GET['amount'];
         $payment_id=$_GET['payment_id'];
-        if($id!='' || $amount!=''){
-            $sql=$this->db->set("wallet","wallet"+$amount)->where('id',$id)->update('user_register');
+        if($phone!='' || $amount!=''){
+            $sql=$this->db->set("wallet","wallet"+$amount)->where('phone',$phone)->update('user_register');
             if($sql){
                 $data = array(
-                    'user_id' => $id,
+                    'phone' => $phone,
                     'amount' => $amount,
                     'transaction_id' => $payment_id,
                     'remark' => 'amount added in wallet',
@@ -290,9 +290,9 @@ class User extends API_Controller
     }
     public function book_ride(){
     // latitude and longitude distance calculator
-        $id=$this->input->post('user_id');
+        $phone=$this->input->post('phone');
         $this->auth(null,['POST'],TRUE);
-        if(!is_user($id)){
+        if(!is_user($phone)){
             $response['status'] = 0;
             $response['message'] = "User Not Found";
             echo json_encode($response);exit;
@@ -323,11 +323,11 @@ class User extends API_Controller
         $destination_name2 = $this->input->post('destination_name2');
         $payment_method=$this->input->post('payment_method'); // cash , wallet ,  online
         $date = date('Y-m-d H:i:s');
-        $image = $this->db->select('photo_path')->where('id',$id)->get('user_register');
-        $image = $image['photo_path'];
+        $image1 = $this->db->select('photo_path')->where('id',$phone)->get('user_register');
+        $image = $image1['photo_path'];
         if($payment_method=='wallet'){
             // check wallet balance
-            $u_wallet=$this->db->select('wallet')->where('id',$id)->get('user_register');
+            $u_wallet=$this->db->select('wallet')->where('id',$phone)->get('user_register');
             if($u_wallet['wallet']<$amount){
             $response['status'] = 0;
             $response['message'] = "You don't have enough balance in wallet";
@@ -341,20 +341,19 @@ class User extends API_Controller
         else
         $stop=1;
 
-        $count = $this->db->count_all('booking_details')->where(array()); 
-        mysqli_num_rows(mysqli_query($con,"SELECT id FROM `booking_details` where user_id='$user_id' AND ( ride_status='new' OR ride_status='onride' OR ride_status='confirm' OR ride_status='arrived' )"));
+        $count = $this->db->query("SELECT id FROM `booking_details` where phone='$phone' AND ( ride_status='new' OR ride_status='onride' OR ride_status='confirm' OR ride_status='arrived' )")->result_array();
 
-        if($count==0){
+        if(count($count[0])==0){
 
         // latitude and longitude of Two Points
             $count=0;
-            $result = mysqli_query($con,"SELECT r.id,r.latitude,r.longitude,r.go_home,r.go_home_lat,r.go_home_long FROM driver_register r INNER JOIN driver_vehicle d on r.id=d.driver_id WHERE r.status='1' AND r.online!='no' and (r.latitude !='null' and r.latitude !='') and ( r.longitude !='null' and r.longitude !='' ) and d.vehicle_id='$vehicle_type' ");
-            $bookid = strtoupper(uniqid().$user_id);
+            $result=$this->db->query("SELECT r.id,r.latitude,r.longitude,r.go_home,r.go_home_lat,r.go_home_long FROM driver_register r INNER JOIN driver_vehicle d on r.id=d.driver_id WHERE r.status='1' AND r.online!='no' and (r.latitude !='null' and r.latitude !='') and ( r.longitude !='null' and r.longitude !='' ) and d.vehicle_id='$vehicle_type' ")->result_array();            
+            $bookid = strtoupper(uniqid().$phone);
             $otp = rand(1111,9999);
             $icount = 0;
             $range1= general_value('go_home_km');
             $range=general_value('km_range'); // km range of driver to get the booking
-            while($row=mysqli_fetch_array($result)){
+            foreach($result[0] as $row){
                 $id=$row['id'];
                 $distance1=distance($lat1,$lng1,$row['latitude'],$row['longitude'],"K");
 
@@ -365,20 +364,20 @@ class User extends API_Controller
                         $home_dis=distance($destination_lat2,$destination_long2,$row['go_home_lat'],$row['go_home_long'],"K");
                         if(intval($home_dis) <= $range1)
                         {
-                            $insertdata = mysqli_query($con, "INSERT INTO booking_details(bookid,otp,user_id,stop,depart_name,destination_name,destination_name2,depart_lat,depart_long,dest_lat,dest_long,distance,duration,vehicle_type,demand,amount,base_fare,toll,tax,commission,surcharge,ride_status,payment_status,driver_id,payment_method,created_date,image,discount,coupon)
-                            VALUES('$bookid','$otp','$user_id','$stop','$depart_name','$destination_name','$destination_name2','$lat1','$lng1','$lat2','$lng2',
+                            $this->db->query("INSERT INTO booking_details(bookid,otp,phone,stop,depart_name,destination_name,destination_name2,depart_lat,depart_long,dest_lat,dest_long,distance,duration,vehicle_type,demand,amount,base_fare,toll,tax,commission,surcharge,ride_status,payment_status,driver_id,payment_method,created_date,image,discount,coupon)
+                            VALUES('$bookid','$otp','$phone','$stop','$depart_name','$destination_name','$destination_name2','$lat1','$lng1','$lat2','$lng2',
                             '$distance','$duration','$vehicle_type','$demand','$amount','$base_fare','$toll','$tax','$commission','$surcharges','new',0,'$id','$payment_method','$date','$image','$discount','$coupon')");
-                            if(mysqli_affected_rows($con) > 0){
+                            if($this->db->insert_id() > 0){
                                 $icount++;
                             }
                         }
                     }
                     else{
 
-                        $insertdata = mysqli_query($con, "INSERT INTO booking_details(bookid,otp,user_id,stop,depart_name,destination_name,destination_name2,depart_lat,depart_long,dest_lat,dest_long,dest_lat2,dest_long2,distance,duration,vehicle_type,demand,amount,base_fare,toll,tax,commission,surcharge,ride_status,payment_status,driver_id,payment_method,created_date,image,discount,coupon)
-                        VALUES('$bookid','$otp','$user_id','$stop','$depart_name','$destination_name','$destination_name2','$lat1','$lng1','$lat2','$lng2','$destination_lat2','$destination_long2',
+                        $this->db->query("INSERT INTO booking_details(bookid,otp,phone,stop,depart_name,destination_name,destination_name2,depart_lat,depart_long,dest_lat,dest_long,dest_lat2,dest_long2,distance,duration,vehicle_type,demand,amount,base_fare,toll,tax,commission,surcharge,ride_status,payment_status,driver_id,payment_method,created_date,image,discount,coupon)
+                        VALUES('$bookid','$otp','$phone','$stop','$depart_name','$destination_name','$destination_name2','$lat1','$lng1','$lat2','$lng2','$destination_lat2','$destination_long2',
                         '$distance','$duration','$vehicle_type','$demand','$amount','$base_fare','$toll','$tax','$commission','$surcharges','new',0,'$id','$payment_method','$date','$image','$discount','$coupon')");
-                            if(mysqli_affected_rows($con) > 0){
+                            if($this->db->insert_id() > 0){
                                 $icount++;
                             }
                     }
@@ -405,6 +404,182 @@ class User extends API_Controller
             $response['message'] = "Operation failed";
         }
         echo json_encode($response);
-        mysqli_close($con);
     }
+    public function cancel_booking(){
+        $phone=$this->input->post('phone');
+        $this->auth(null,['POST'],TRUE);
+        if(!is_user($phone)){
+            $response['status'] = 0;
+            $response['message'] = "User Not Found";
+            echo json_encode($response);exit;
+        }
+        $book_id =$this->input->post('booking_id');
+        if($phone!='' &&  $book_id!=''){
+            $row=$this->db->query("SELECT ride_status from booking_details where phone='$phone' AND bookid='$book_id' and ride_status!='complete' ")->result_array();
+            if($row[0]['ride_status']=='new'){
+             $this->db->query("delete from booking_details where phone='$phone' and ride_status='new' and bookid='$book_id' ");   
+            }
+            else{
+                $this->db->query("UPDATE booking_details set ride_status='cancel',cancelled_by='user' where phone='$phone' and bookid='$book_id' ");
+                //cancellation charges
+                $cancel_amount=general_value('cancel_charge');
+                $this->db->query("UPDATE user_register set wallet=wallet-$cancel_amount where phone='$phone'");
+                $payment_id=strtoupper(uniqid().'CNCEL');
+                $this->db->query("INSERT INTO user_transaction (phone,amount,transaction_id,remark,type,status,date) values ('$phone','$cancel_amount','$payment_id','cancellation charge on ride $book_id',0,1,CURDATE())");
+            }
+            if($this->db->affected_rows()>0){
+                  $response['status'] = 1; // if successful
+                  $response['message'] = "Ride cancelled successfully";
+            }
+            else{
+              $response['status'] = 0; // if coupon does not exist
+              $response['message'] = "Cancellation failed";
+            }
+    
+        }
+        else{
+            $response['status'] = 0;
+            $response['message'] = "Wrong parameter passed";
+        }
+    
+        if(empty($response)){
+            $response['status']=0;
+        }
+        echo json_encode($response);
+    }
+    public function check_ride_status(){
+        $phone=$this->input->post('phone');
+        $this->auth(null,['POST'],TRUE);
+        if(!is_user($phone)){
+            $response['status'] = 0;
+            $response['message'] = "User Not Found";
+            echo json_encode($response);exit;
+        }
+        $bookid = $this->input->post('bookid');
+        if($phone!=''){
+            $sql=$this->db->query("select b.ride_status,b.ride_type,ve.type as vehicle,v.brand,v.model,b.otp,b.depart_name,b.destination_name,b.destination_name2,b.depart_lat,b.depart_long,b.dest_lat,b.dest_long,b.dest_lat2,b.dest_long2,d.id as driver_id,d.phone as driver_phone,d.fullname as driver_name,d.photo_path,v.noplate,b.amount,b.payment_method,b.payment_status,b.payment_status from booking_details b INNER JOIN driver_register d on b.driver_id=d.id INNER JOIN driver_vehicle v on d.id=v.driver_id INNER JOIN vehicle_list ve on ve.id=v.vehicle_id where b.phone='$phone' AND b.bookid='$bookid' and b.ride_status!='new' ");
+            if($row=$sql[0]){
+                $response['status'] = 1; // if successful
+                $response['message'] = "Success";
+                $response['data'][]=$row;
+                if($row['payment_status']  == 1 || $row['payment_status']  == '1')
+                {
+                    user_firstride_referal($phone);
+                    $rides = update_d_select($phone);
+                    $response['data'][0]['d-select'] = $rides;
+                }
+            }
+            else{
+                $response['status'] = 0; // if failed
+                $response['message'] = "We are fetching nearby drivers. Please wait...";
+            }
+        }
+        if(empty($response)){
+            $response['status']=0;
+            $response['message'] = "Operation failed";
+        }
+        echo json_encode($response);
+    }
+    public function get_my_rides(){
+        $phone=$this->input->post('phone');
+        $this->auth(null,['POST'],TRUE);
+        if(!is_user($phone)){
+            $response['status'] = 0;
+            $response['message'] = "User Not Found";
+            echo json_encode($response);exit;
+        }
+        if($phone!=''){
+            $sql=$this->db->query("select b.bookid as booking_id,v.type,v.image,b.created_date,b.depart_name,b.destination_name,b.destination_name2,b.amount from booking_details b INNER JOIN vehicle_list v on b.vehicle_type=v.id where b.phone='$phone' and b.ride_status='completed' ");
+            while($row=$sql[0]){
+                $response['status'] = 1; // if successful
+                $response['data'][]=$row;
+            }
+        }
+        else{
+            $response['status'] = 0;
+            $response['message'] = "Wrong parameter passed";    
+        }    
+        if(empty($response)){
+            $response['status']=0;
+            $response['message'] = "No Data Found";
+        }
+        echo json_encode($response);
+    }
+
+    public function get_ride_details(){
+
+    $phone=$this->input->post('phone');
+    $this->auth(null,['POST'],TRUE);
+    if(!is_user($phone)){
+        $response['status'] = 0;
+        $response['message'] = "User Not Found";
+        echo json_encode($response);exit;
+    }
+    $id= $this->input->post('booking_id');
+    if(!empty($id)){
+        $sql= $this->db->query("select b.id as booking_id,dv.*,v.type,v.image,b.distance,b.duration,b.base_fare,b.tax,b.commission,b.payment_method,b.created_date,b.depart_name,b.destination_name,b.destination_name2,b.amount from booking_details b INNER JOIN vehicle_list v on b.vehicle_type=v.id INNER JOIN driver_vehicle dv ON dv.driver_id=b.driver_id where b.phone='$phone' and b.bookid='$id' and b.ride_status='completed'");
+        foreach($sql[0] as $row){
+            $response['status'] = 1; // if successful
+            $response['data']=$row;
+        }
+    }
+    else{
+        $response['status'] = 0;
+        $response['message'] = "Wrong parameter passed";
+    }
+
+    if(empty($response)){
+        $response['status']=0;
+        $response['message']="Booking details not found!";
+    }
+    echo json_encode($response);
+    }
+    public function pay_for_ride_cash(){
+    $phone=$this->input->post('phone');
+    $this->auth(null,['POST'],TRUE);
+    if(!is_user($phone)){
+        $response['status'] = 0;
+        $response['message'] = "User Not Found";
+        echo json_encode($response);exit;
+    }
+    $bookid=$this->input->post('booking_id');
+    if($phone!='' && $bookid!=''){
+    $sql1=$this->db->query("select driver_id,amount,base_fare,commission,payment_status from booking_details where user_id='$phone' AND ride_status='completed' AND bookid='$bookid'");
+    $row1=$sql1[0];
+        if(count($row1)>=1){
+            $payment_id=strtoupper($bookid.'-CASH');
+            if($row1['payment_status']==1){
+                $response['status']=0;
+                $response['message']='Payment already done';
+            }
+            else{
+                $this->db->query("UPDATE booking_details set transaction_id='$payment_id',payment_status=1 where bookid='$bookid' AND user_id='$phone' ");
+                if($this->db->affected_rows()>0){
+                // user transaction entry                       
+                        $amount=$row1['amount'];
+                        $this->db->query("INSERT INTO user_transaction (phone,amount,transaction_id,remark,status,date) values ('$phone','$amount','$payment_id','ride payment by cash',1,CURDATE())");
+                        // update driver wallet
+                        $driver_id=$row1['driver_id'];
+                        $comm=$row1['commission'];
+                        $base_fare=$row1['base_fare'];
+                        $wallet_deduction=$base_fare-$comm;
+                        $this->db->query("UPDATE driver_register set wallet = wallet-$wallet_deduction where id='$driver_id' ");                    
+                        $this->db->query("INSERT into driver_transaction (driver_id,amount,transaction_id,remark,status,date) values ('$driver_id','$amount','$payment_id','ride payment by cash',1,CURDATE())");            
+                        $response['status']=1;
+                        $response['message']='Payment successful';
+                }
+            }
+        }
+        else{
+        $response['status']=0;
+        $response['message']="Ride not completed yet!";
+        }
+    }
+    if(empty($response)){
+        $response['status']=0;
+        $response['message'] = "Operation failed";
+    }
+    echo json_encode($response);
+    }
+
 }
