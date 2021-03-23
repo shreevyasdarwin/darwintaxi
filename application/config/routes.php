@@ -66,6 +66,8 @@ $route['api/v1/user/vehicle_list'] 			= 'User/vehicle_list';
 
 $route['api/v1/user/generateAccessToken'] 	= 'User/generateAccessToken';
 
+$route['api/v1/user/payForRideFromWallet'] 	= 'User/payForRideFromWallet';
+
 
 // ***************************************Driver*****************************************************
 

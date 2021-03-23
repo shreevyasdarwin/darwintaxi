@@ -364,3 +364,34 @@ function general_value($column){
         return 0;
 }
 
+
+function getDirectValue($table,$columnRequired,$columnNameToCompare,$columnValueToCompare){
+    $CI = & get_instance();
+    $value  = $CI->db->get_where($table,array($columnNameToCompare =>'$columnValueToCompare'))->result_array();
+    // $value  = $CI->db->query("SELECT $columnRequired from $table where $columnNameToCompare = '$columnValueToCompare'")->result_array();
+    if($value){
+        return $value[0]['value'];
+    }
+    else
+        return 0;
+}
+
+function updateDirectValue($table,$data,$where){
+    $CI = & get_instance();
+    $value  = $CI->db->update($table, $data, $where);
+    if($value)
+        return 1;
+    else
+        return 0;
+}
+
+
+function insertDirectValue($table,$data){
+    $CI = & get_instance();
+    $value  = $CI->db->insert($table, $data);
+    if($value)
+        return 1;
+    else
+        return 0;
+}
+

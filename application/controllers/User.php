@@ -266,4 +266,111 @@ class User extends API_Controller
             $this->api_return(['status' => FALSE, 'message' => 'Token is not defined.'],200);
         }
     }
+
+    public function payForRideFromWallet(){
+        echo 'in';
+        header("Access-Control-Allow-Origin: *");
+        $phone = $this->auth('phone',['POST'],true);
+        $data['booking_id']   = $this->input->post('booking_id');
+
+        echo 'BookingID : '.$data['booking_id'];
+        echo '<br>';
+
+        if($phone !='' && $data['booking_id'] !=''){
+            $this->db->select('driver_id,amount,base_fare,commission');
+			$this->db->from('booking_details');
+			$this->db->where('ride_status', 'completed');
+			$this->db->where('user_phone', $phone);
+			$this->db->where('bookid', $bookid);
+			$bookingDetails = $this->db->get()->result_array();
+
+            echo 'Count : '.count($bookingDetails);
+            echo '<br>';
+
+			if(count($bookingDetails) > 0){
+                $payment_id = strtoupper($bookid.'-WALLET');
+
+                echo 'PaymentID : '.$payment_id;
+                echo '<br>';
+
+                if($bookingDetails[0]['payment_status'] == 1){
+                    $response['status']=0;
+                    $response['message']='Payment already done';
+                }else{
+                    $data['transaction_id']   = $payment_id;
+                    $data['payment_status']      = '1';
+                    $where['bookid'] = $bookid;
+                    $where['user_phone'] = $phone;
+                    $updateTidAndPstatus = updateDirectValue('user_register',$data,$where);
+
+                    echo 'Update TID & Status : '.$updateTidAndPstatus;
+                    echo '<br>';
+
+                    if($updateTidAndPstatus == 1){
+                        
+        
+                        //Update User Wallet
+                        $userWallet = getDirectValue('user_register','wallet','phone',$user_phone);
+
+                        echo 'UserWallet : '.$userWallet;
+                        echo '<br>';
+
+                        $minusAmount = $userWallet - $bookingDetails[0]['amount'];
+                        $update['wallet'] = $minusAmount;
+                        $where['user_phone'] = $phone;
+                        $updateUserWallet = updateDirectValue('user_register',$update,$where);
+
+                        echo 'Update User Wallet: '.$updateUserWallet;
+                        echo '<br>';
+
+                        $userTransactions['user_phone'] = $phone;
+                        $userTransactions['amount'] = $bookingDetails[0]['amount'];
+                        $userTransactions['transaction_id'] = $payment_id;
+                        $userTransactions['remark'] = 'ride payment by wallet';
+                        $userTransactions['status'] = 1;
+                        $userTransactions['date'] = date('Y-m-d H:i:s');
+                        $insertUserTransaction = insertDirectValue('user_transaction',$userTransactions);
+
+                        echo 'User Transaction : '.$insertUserTransaction;
+                        echo '<br>';
+
+
+                        // Update Driver Wallet
+                        $income = $bookingDetails[0]['base_fare'] - $bookingDetails[0]['commission'];
+                        $driverWallet =  getDirectValue('driver_register','wallet','id',$bookingDetails[0]['driver_id']);
+                        
+                        echo 'Driver Wallet : '.$driverWallet;
+                        echo '<br>';
+                        
+                        $updateDriverWallet['wallet'] = $driverWallet + $income;
+                        $whereDriverWallet['id'] = $bookingDetails[0]['driver_id'];
+                        $updateDriverWallet = updateDirectValue('driver_register',$update,$where);
+
+                        echo 'udpate Driver Wallet : '.$updateDriverWallet;
+                        echo '<br>';
+
+                        $driverTransactions['driver_id'] = $bookingDetails[0]['driver_id'];
+                        $driverTransactions['amount'] = $income;
+                        $driverTransactions['transaction_id'] = $payment_id;
+                        $driverTransactions['remark'] = 'ride payment by wallet';
+                        $driverTransactions['status'] = 1;
+                        $driverTransactions['date'] = date('Y-m-d H:i:s');
+                        $insertDriverTransaction = insertDirectValue('driver_transaction',$driverTransactions);
+                        
+                        echo 'Driver Transaction : '.$insertDriverTransaction;
+                        echo '<br>';
+                        $this->api_return(['status' => TRUE,'message' => 'Updated'],200);
+
+                      }
+                }
+        
+            }
+            else{
+                $this->api_return(['status' => FALSE,'message' => 'Ride not completed yet'],500);
+            }
+          }
+          if(empty($response)){
+            $this->api_return(['status' => FALSE,'message' => 'Operation Failed'],500);
+          }
+    }
 }
