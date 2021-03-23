@@ -398,8 +398,8 @@ class User extends API_Controller
 
     public function user_transaction()
     {
-        // $phone = $this->auth('phone',['POST'],TRUE); 
-        $phone = $this->input->post('phone');
+        $phone = $this->auth('phone',['POST'],TRUE); 
+        // $phone = $this->input->post('phone');
         $amt = $this->input->post('amount');
         $transaction_id = $this->input->post('transaction_id');
         $status = $this->input->post('status');
@@ -435,5 +435,32 @@ class User extends API_Controller
                 "message" => "server error"
             ]);exit;
         }
+    }
+
+    public function fetch_fav_ride()
+    {
+       // $phone = $this->auth('phone',['POST'],TRUE); 
+       $phone = $this->input->post('user_phone');
+       if(!$phone){
+           $this->api_return([
+               "status" => FALSE,
+               "message" => "fields not provided"
+           ]);
+           exit;
+       }
+       $sql = $this->db->select('*')->from('favourite_ride')->where('user_phone', $phone)->get()->result_array();
+       if(count($sql) > 0){
+           foreach ($sql as $row) {
+               $this->api_return([
+                   "status" => TRUE,
+                   "data" => $row
+               ]);
+           }
+       }else{
+           $this->api_return([
+               "status" => FALSE,
+               "message" => "No data found"
+           ]);
+       }
     }
 }

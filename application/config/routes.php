@@ -74,6 +74,8 @@ $route['api/v1/user/get_profile'] 	= 'User/get_profile';
 
 $route['api/v1/user/user_transaction'] 	= 'User/user_transaction';
 
+$route['api/v1/user/fetch_fav_ride'] 	= 'User/fetch_fav_ride';
+
 
 // ***************************************Driver*****************************************************
 

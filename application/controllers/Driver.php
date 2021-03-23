@@ -737,4 +737,46 @@ class Driver extends API_Controller {
 			]);exit;
 		}
 	}
+
+	public function reviewDriver()
+	{
+		// $phone = $this->auth('phone',['POST'],TRUE);
+		$phone = $this->input->post('phone');
+		$bookid = $this->input->post('bookid');
+		$driver_phone = $this->input->post('driver_phone');
+		$stars = $this->input->post('stars');
+		$review = $this->input->post('review');
+		if(!$phone || !$bookid || !$driver_phone || !$stars || !$review){
+			$this->api_return([
+				"status" => FALSE,
+				"message" => "fields not provided"
+			]);exit;
+		}
+		$chk = $this->db->select('id')->from('driver_review')->where("bookid", $bookid)->get()->result_array();
+		if(count($chk) > 0){
+			$this->api_return([
+				"status" => FALSE,
+				"message" => "Review already exist for this ride"
+			]);exit;
+		}
+		$data = array(
+			"driver_phone" => $driver_phone,
+			"user_phone" => $phone,
+			"bookid" => $bookid,
+			"stars" => $stars,
+			"review" => $review,
+		);
+		$sql = $this->db->insert("driver_review", $data);
+		if($sql){
+			$this->api_return([
+				"status" => TRUE,
+				"message" => "success"
+			]);
+		}else{
+			$this->api_return([
+				"status" => FALSE,
+				"message" => "server error"
+			]);exit;
+		}
+	}
 }
