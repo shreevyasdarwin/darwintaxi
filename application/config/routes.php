@@ -49,53 +49,54 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | Examples:	my-controller/index	-> my_controller/index
 |		my-controller/my-method	-> my_controller/my_method
 */
-$route['home'] = 'welcome';
-$route['default_controller'] = 'welcome';
+
+$route['default_controller'] = 'user';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
+// ***************************************User*****************************************************
 
-// user
-// url	-> controller/method
+$route['api/v1/user/login'] 				= 'User/login';
+
+$route['api/v1/user/update_profile'] 		= 'User/update_profile';
+
+$route['api/v1/user/profile'] 				= 'User/profile';
+
+$route['api/v1/user/vehicle_list'] 			= 'User/vehicle_list';
+
+$route['api/v1/user/generateAccessToken'] 	= 'User/generateAccessToken';
 
 
-// API
-$route['api/v1/user/login'] = 'User/login';
+// ***************************************Driver*****************************************************
 
+$route['api/v1/driver/get_driver_detail'] 	= 'Driver/get_driver_detail/{1}';
 
-$route['api/v1/user/update_profile'] = 'User/update_profile';
+$route['api/v1/driver/get_vehicle_list'] 	= 'Driver/get_vehicle_list';
 
-$route['api/v1/driver/get_driver_detail'] = 'Driver/get_driver_detail/{1}';
+$route['api/v1/driver/get_my_booking'] 		= 'Driver/get_my_booking';
 
-$route['api/v1/driver/get_vehicle_list'] = 'Driver/get_vehicle_list';
-$route['api/v1/driver/get_my_booking'] = 'Driver/get_my_booking';
-$route['api/v1/user/profile'] = 'User/profile';
-$route['api/v1/user/vehicle_list'] = 'User/vehicle_list';
+$route['api/v1/driver/login'] 				= 'Driver/login';
 
-$route['api/v1/user/generateAccessToken'] = 'User/generateAccessToken';
+$route['api/v1/driver/purchase_sub'] 		= 'Driver/purchase_sub';
 
-$route['api/v1/driver/login'] = 'Driver/login';
+$route['api/v1/driver/service_list'] 		= 'Driver/service_list';
 
-$route['api/v1/driver/purchase_sub'] = 'Driver/purchase_sub';
+$route['api/v1/driver/report_user'] 		= 'Driver/report_user';
 
-$route['api/v1/driver/service_list'] = 'Driver/service_list';
+$route['api/v1/driver/subscription'] 		= 'Driver/subscription';
 
-$route['api/v1/driver/report_user'] = 'Driver/report_user';
+$route['api/v1/driver/update_driver_status']= 'Driver/update_driver_status';
 
-$route['api/v1/driver/subscription'] = 'Driver/subscription';
+$route['api/v1/driver/update_location'] 	= 'Driver/update_location';
 
-$route['api/v1/driver/update_driver_status'] = 'Driver/update_driver_status';
+$route['api/v1/driver/rental_price'] 		= 'Driver/rental_price';
 
-$route['api/v1/driver/update_location'] = 'Driver/update_location';
+$route['api/v1/driver/fetch_alert'] 		= 'Driver/fetch_alert';
 
-$route['api/v1/driver/rental_price'] = 'Driver/rental_price';
+$route['api/v1/driver/driver_transaction'] 	= 'Driver/driver_transaction';
 
-$route['api/v1/driver/fetch_alert'] = 'Driver/fetch_alert';
+$route['api/v1/driver/get_wallet'] 			= 'Driver/get_wallet';
 
-$route['api/v1/driver/driver_transaction'] = 'Driver/driver_transaction';
+$route['api/v1/driver/logout'] 				= 'Driver/logout';
 
-$route['api/v1/driver/get_wallet'] = 'Driver/get_wallet';
-
-$route['api/v1/driver/logout'] = 'Driver/logout';
-
-$route['api/v1/driver/get_driver_detail'] = 'Driver/get_driver_detail/{1}';
+$route['api/v1/driver/get_driver_detail'] 	= 'Driver/get_driver_detail/{1}';
