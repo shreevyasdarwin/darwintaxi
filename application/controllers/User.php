@@ -266,4 +266,174 @@ class User extends API_Controller
             $this->api_return(['status' => FALSE, 'message' => 'Token is not defined.'],200);
         }
     }
+
+    public function purchase_sub()
+    {
+        $phone = $this->auth('phone',['POST'],TRUE);
+        $sub_type = $this->input->post('sub_type');
+        $pay_type = $this->input->post('pay_type');
+        if(strlen($phone) != 10){
+            $this->api_return(['status' => FALSE, 'message' => 'invalid mobile number']);
+            exit;
+        }
+        if(!$phone || !$sub_type |!$pay_type){
+            $this->api_return(['status' => FALSE, 'message' => 'fields not provided']);
+            exit;
+        }
+        $fetch = $this->db->select('sub_exp_date')->from('user_register')->where('phone', $phone)->get()->result_array();
+        if($sub_type=='1'){
+            $d = strtotime("+1 months",strtotime($fetch[0]['sub_exp_date']));
+            $sub_exp_date = date("Y-m-d",$d);
+            $sql = $this->db->set('sub_exp_date', $sub_exp_date)->set('pay_type', $pay_type)->set('sub_type', $sub_type)->where('phone', $phone)->update('user_register');
+            if($sql){
+                $this->api_return([
+                    'status' => TRUE,
+                    'message' => 'success'
+                ]);
+            }else{
+                $this->api_return([
+					"status" => FALSE,
+					"message" => $this->db->_error_message()
+				]);exit;
+            }
+        }
+        if($sub_type=='3'){
+            $d = strtotime("+3 months",strtotime($fetch[0]['sub_exp_date']));
+            $sub_exp_date = date("Y-m-d",$d);
+            $sql = $this->db->set('sub_exp_date', $sub_exp_date)->set('pay_type', $pay_type)->set('sub_type', $sub_type)->where('phone', $phone)->update('user_register');
+            if($sql){
+                $this->api_return([
+                    'status' => TRUE,
+                    'message' => 'success'
+                ]);
+            }else{
+                $this->api_return([
+					"status" => FALSE,
+					"message" => $this->db->_error_message()
+				]);exit;
+            }
+        }
+        if($sub_type=='6'){
+            $d = strtotime("+6 months",strtotime($fetch[0]['sub_exp_date']));
+            $sub_exp_date = date("Y-m-d",$d);
+            $sql = $this->db->set('sub_exp_date', $sub_exp_date)->set('pay_type', $pay_type)->set('sub_type', $sub_type)->where('phone', $phone)->update('user_register');
+            if($sql){
+                $this->api_return([
+                    'status' => TRUE,
+                    'message' => 'success'
+                ]);
+            }else{
+                $this->api_return([
+					"status" => FALSE,
+					"message" => $this->db->_error_message()
+				]);exit;
+            }
+        }
+        if($sub_type=='12'){
+            $d = strtotime("+12 months",strtotime($fetch[0]['sub_exp_date']));
+            $sub_exp_date = date("Y-m-d",$d);
+            $sql = $this->db->set('sub_exp_date', $sub_exp_date)->set('pay_type', $pay_type)->set('sub_type', $sub_type)->where('phone', $phone)->update('user_register');
+            if($sql){
+                $this->api_return([
+                    'status' => TRUE,
+                    'message' => 'success'
+                ]);
+            }else{
+                $this->api_return([
+					"status" => FALSE,
+					"message" => $this->db->_error_message()
+				]);exit;
+            }
+        }
+    }
+
+    public function get_cancel_rides()
+    {
+        $phone = $this->auth('phone',['POST'],TRUE);
+        if(!$phone){
+            $this->api_return([
+                'status' => FALSE,
+                'message' => 'fields not provided'
+            ]);exit;
+        }
+        $row = $this->db->query("select b.bookid as booking_id,v.type,v.image,b.created_date,b.depart_name,b.destination_name,b.destination_name2,b.amount from booking_details b INNER JOIN vehicle_list v on b.vehicle_type=v.id where b.user_phone='$phone' and b.ride_status='cancel'")->result_array();
+        if(count($row) > 0){
+            foreach ($row as $data) {
+                $this->api_return([
+                    "status" => TRUE,
+                    "data" => $data
+                ]);
+            }
+        }else{
+            $this->api_return([
+                "status" => FALSE,
+                "message" => "No data found"
+            ]);exit;
+        }
+    }
+
+    public function get_profile()
+    {
+        $phone = $this->input->post('phone');
+        // $phone = $this->auth('phone',['POST'],TRUE);
+        if(!$phone){
+            $this->api_return([
+                "status" => FALSE,
+                "message" => "fields not provided"
+            ]);exit;
+        }
+        $sql = $this->db->select('*')->from('user_register')->where('phone', $phone)->get()->result_array();
+        if(count($sql)){
+            $this->api_return([
+                "status" => TRUE,
+                "data" => $sql[0]
+            ]);
+        }else{
+            $this->api_return([
+                "status" => FALSE,
+                "message" => "Server error"
+            ]);
+        }        
+    }
+
+    public function user_transaction()
+    {
+        // $phone = $this->auth('phone',['POST'],TRUE); 
+        $phone = $this->input->post('phone');
+        $amt = $this->input->post('amount');
+        $transaction_id = $this->input->post('transaction_id');
+        $status = $this->input->post('status');
+        if(!$phone ||!$amt || !$transaction_id ||!$status){
+            $this->api_return([
+                "status" => FALSE,
+                "message" => "fields not provided"
+            ]);exit;
+        }
+        if($amt==0){
+            $this->api_return([
+                "status" => FALSE,
+                "message" => 'Invalid amount'
+            ]);exit;
+        }
+        $data = array(
+            "user_phone" => $phone,
+            "amount" => $amt,
+            "transaction_id" => $transaction_id,
+            "remark" => "added in wallet",
+            "status" => $status,
+            "date" => date("Y-m-d H:i")
+        );
+        $sql = $this->db->insert('user_transaction', $data);
+        if($sql){
+            $this->api_return([
+                "status" => TRUE,
+                "message" => "success"
+            ]);
+        }else{
+            $this->api_return([
+                "status" => FALSE,
+                "message" => "server error"
+            ]);exit;
+        }
+    }
 }
