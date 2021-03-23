@@ -290,45 +290,44 @@ class User extends API_Controller
     }
     public function book_ride(){
     // latitude and longitude distance calculator
-    require("../function/fare_calculator.php");
-    $vehicle_class= new vehicle_list();
-        $user_id = decrypt($_GET['token']);
-        if(!is_user($user_id)){
+        $id=$this->input->post('user_id');
+        $this->auth(null,['POST'],TRUE);
+        if(!is_user($id)){
             $response['status'] = 0;
             $response['message'] = "User Not Found";
             echo json_encode($response);exit;
         }
         // latitude and longitude
-        $lat1 = $_GET['depart_lat']; // depature
-        $lng1 = $_GET['depart_long']; // depature
-        $lat2 = $_GET['dest_lat']; //destination
-        $lng2 = $_GET['dest_long']; //destination
-        $destination_lat2=$_GET['dest_lat2']; // 2nd stop
-        $destination_long2=$_GET['dest_long2']; // 2nd top
-        $ride_time=$_GET['ride_time'];
-        $duration = $_GET['duration'];
-        $demand = $_GET['demand'];
-        $vehicle_type = $_GET['vehicle_type'];
-        $distance = intval($_GET['distance']);
-        $amount=$_GET['amount'];
-        $tax=$_GET['tax']; //tax
-        $surcharges=$_GET['surcharges'];
-        $toll=$_GET['toll']; // toll
-        $base_fare=$_GET['base_fare']; // base fare
-        $commission = $_GET['comm']; // commission
-        $discount = $_GET['discount'];
-        $coupon = $_GET['coupon'] != '' ? $_GET['coupon'] : NULL;
+        $lat1 = $this->input->post('depart_lat'); // depature
+        $lng1 = $this->input->post('depart_long'); // depature
+        $lat2 = $this->input->post('dest_lat'); //destination
+        $lng2 = $this->input->post('dest_long'); //destination
+        $destination_lat2=$this->input->post('dest_lat2'); // 2nd stop
+        $destination_long2=$this->input->post('dest_long2'); // 2nd top
+        $ride_time=$this->input->post('ride_time');
+        $duration = $this->input->post('duration');
+        $demand = $this->input->post('demand');
+        $vehicle_type = $this->input->post('vehicle_type');
+        $distance = intval($this->input->post('distance'));
+        $amount=$this->input->post('amount');
+        $tax=$this->input->post('tax'); //tax
+        $surcharges=$this->input->post('surcharges');
+        $toll=$this->input->post('toll'); // toll
+        $base_fare=$this->input->post('base_fare'); // base fare
+        $commission = $this->input->post('comm'); // commission
+        $discount = $this->input->post('discount');
+        $coupon = $this->input->post('coupon') != '' ? $this->input->post('coupon') : NULL;
 
-        $depart_name = $_GET['depart_name'];
-        $destination_name = $_GET['destination_name'];
-        $destination_name2 = $_GET['destination_name2'];
-        $payment_method=$_GET['payment_method']; // cash , wallet ,  online
+        $depart_name = $this->input->post('depart_name');
+        $destination_name = $this->input->post('destination_name');
+        $destination_name2 = $this->input->post('destination_name2');
+        $payment_method=$this->input->post('payment_method'); // cash , wallet ,  online
         $date = date('Y-m-d H:i:s');
-        $image = mysqli_fetch_array(mysqli_query($con,"SELECT photo_path from user_register where id='$user_id'"),MYSQLI_ASSOC);
+        $image = $this->db->select('photo_path')->where('id',$id)->get('user_register');
         $image = $image['photo_path'];
         if($payment_method=='wallet'){
             // check wallet balance
-            $u_wallet=mysqli_fetch_array(mysqli_query($con,"SELECT wallet from user_register where id='$user_id'"),MYSQLI_ASSOC);
+            $u_wallet=$this->db->select('wallet')->where('id',$id)->get('user_register');
             if($u_wallet['wallet']<$amount){
             $response['status'] = 0;
             $response['message'] = "You don't have enough balance in wallet";
@@ -342,7 +341,8 @@ class User extends API_Controller
         else
         $stop=1;
 
-        $count = mysqli_num_rows(mysqli_query($con,"SELECT id FROM `booking_details` where user_id='$user_id' AND ( ride_status='new' OR ride_status='onride' OR ride_status='confirm' OR ride_status='arrived' )"));
+        $count = $this->db->count_all('booking_details')->where(array()); 
+        mysqli_num_rows(mysqli_query($con,"SELECT id FROM `booking_details` where user_id='$user_id' AND ( ride_status='new' OR ride_status='onride' OR ride_status='confirm' OR ride_status='arrived' )"));
 
         if($count==0){
 
@@ -356,13 +356,13 @@ class User extends API_Controller
             $range=general_value('km_range'); // km range of driver to get the booking
             while($row=mysqli_fetch_array($result)){
                 $id=$row['id'];
-                $distance1=$vehicle_class->distance($lat1,$lng1,$row['latitude'],$row['longitude'],"K");
+                $distance1=distance($lat1,$lng1,$row['latitude'],$row['longitude'],"K");
 
                 if(intval($distance1) <= $range)
                 {
                     if($row['go_home'] == 1) //check driver go home query
                     {
-                        $home_dis=$vehicle_class->distance($destination_lat2,$destination_long2,$row['go_home_lat'],$row['go_home_long'],"K");
+                        $home_dis=distance($destination_lat2,$destination_long2,$row['go_home_lat'],$row['go_home_long'],"K");
                         if(intval($home_dis) <= $range1)
                         {
                             $insertdata = mysqli_query($con, "INSERT INTO booking_details(bookid,otp,user_id,stop,depart_name,destination_name,destination_name2,depart_lat,depart_long,dest_lat,dest_long,distance,duration,vehicle_type,demand,amount,base_fare,toll,tax,commission,surcharge,ride_status,payment_status,driver_id,payment_method,created_date,image,discount,coupon)
