@@ -887,6 +887,7 @@ class User extends API_Controller
             $this->api_return(['status' => FALSE,'message' => 'Operation Failed'],500);
           }
 
+    }
     public function pay_for_ride_gateway()
     {
         header("Access-Control-Allow-Origin: *");
